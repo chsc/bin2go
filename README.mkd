@@ -1,0 +1,9 @@
+bin2go
+======
+
+Converts binary files to go source code.
+
+Usage
+-----
+
+	bin2go -p <package name> -l <number of bytes per line> <file 1> <file 2> ...
