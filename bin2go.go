@@ -35,11 +35,12 @@ import (
 )
 
 var (
-	packageName = flag.String("p", "main", "Package name")
-	lineLen = flag.Int("l", 32, "Line length")
+	pkgName = flag.String("p", "main", "Package name")
+	lineLen = flag.Int("l", 8, "Line length")
+	comment = flag.Bool("c", false, "Line comments")
 )
 
-func bin2go(ifile, ofile, packName, bufName string, line int) error {
+func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
 		return err;
@@ -54,7 +55,7 @@ func bin2go(ifile, ofile, packName, bufName string, line int) error {
 	buffer := make([]byte, line)
 
 	fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-	fmt.Fprintf(ofi, "package %s\n\n", packName)
+	fmt.Fprintf(ofi, "package %s\n\n", pkgName)
 	fmt.Fprintf(ofi, "var %s = [...]byte{\n", bufName)
 	for {
 		nRead, err := ifi.Read(buffer)
@@ -67,6 +68,9 @@ func bin2go(ifile, ofile, packName, bufName string, line int) error {
 		for _, c := range buffer[1:nRead] {
 			fmt.Fprintf(ofi, " %0#2x,", c)
 		}
+		if comment {
+			fmt.Fprintf(ofi, "\t// %s", clean(string(buffer)))
+		}
 		fmt.Fprint(ofi, "\n")
 	}
 	fmt.Fprint(ofi, "}")
@@ -74,18 +78,18 @@ func bin2go(ifile, ofile, packName, bufName string, line int) error {
 	return nil
 }
 
-func cleanFileName(file string) string {
+func clean(s string) string {
 	return strings.Map(func (r rune) rune {
 			if unicode.IsLetter(r) || unicode.IsDigit(r) {
 				return r
 			}
 			return '_'
-		}, file)
+		}, s)
 }
 
 func main() {
 	flag.Parse()
-	for _, file := range flag.Args() {
-		bin2go(file, file + ".go", *packageName, cleanFileName(file), *lineLen)
+	for _, fileName := range flag.Args() {
+		bin2go(fileName, fileName + ".go", *pkgName, clean(fileName), *lineLen, *comment)
 	}
 }
