@@ -63,9 +63,9 @@ func bin2go(ifile, ofile, packName, bufName string, line int) error {
 		} else if err != nil {
 			return err
 		}
-		fmt.Fprint(ofi, "\t")
-		for _, c := range buffer[0:nRead] {
-			fmt.Fprintf(ofi, "%0#2x, ", c)
+		fmt.Fprintf(ofi, "\t%0#2x,", buffer[0])
+		for _, c := range buffer[1:nRead] {
+			fmt.Fprintf(ofi, " %0#2x,", c)
 		}
 		fmt.Fprint(ofi, "\n")
 	}
