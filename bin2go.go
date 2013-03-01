@@ -39,19 +39,15 @@ var (
 	lineLen   = flag.Int("l", 8, "Line length")
 	comment   = flag.Bool("c", false, "Line comments")
 	not_sized = flag.Bool("z", false, "Use non-sized []byte")
+	single    = flag.String("s", "", "Single output filename")
 )
 
-func bin2go(ifile, ofile, pkgName, bufName string, line int, comment, not_sized bool) error {
+func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not_sized, use_single bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
 		return err
 	}
 	defer ifi.Close()
-	ofi, err := os.Create(ofile)
-	if err != nil {
-		return err
-	}
-	defer ofi.Close()
 
 	buffer := make([]byte, line)
 
@@ -60,9 +56,12 @@ func bin2go(ifile, ofile, pkgName, bufName string, line int, comment, not_sized 
 		size = ""
 	}
 
-	fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-	fmt.Fprintf(ofi, "package %s\n\n", pkgName)
-	fmt.Fprintf(ofi, "var %s = [%s]byte{\n", bufName, size)
+	if !use_single {
+		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
+		fmt.Fprintf(ofi, "package %s", pkgName)
+	}
+
+	fmt.Fprintf(ofi, "\n\nvar %s = [%s]byte{\n", bufName, size)
 	for {
 		nRead, err := ifi.Read(buffer)
 		if err == io.EOF {
@@ -95,7 +94,32 @@ func clean(s string) string {
 
 func main() {
 	flag.Parse()
+
+	var ofi *os.File
+	var err error
+	var use_single = *single != ""
+	if use_single {
+		if ofi, err = os.Create(*single); err != nil {
+			return
+		}
+
+		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
+		fmt.Fprintf(ofi, "package %s", *pkgName)
+
+		defer ofi.Close()
+	}
+
 	for _, fileName := range flag.Args() {
-		bin2go(fileName, fileName+".go", *pkgName, clean(fileName), *lineLen, *comment, *not_sized)
+		if !use_single {
+			if ofi, err = os.Create(fileName + ".go"); err != nil {
+				return
+			}
+		}
+
+		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *not_sized, use_single)
+
+		if !use_single {
+			ofi.Close()
+		}
 	}
 }
