@@ -26,12 +26,12 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"io"
 	"os"
-	"unicode"
 	"strings"
+	"unicode"
 )
 
 var (
@@ -43,12 +43,12 @@ var (
 func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
-		return err;
+		return err
 	}
 	defer ifi.Close()
 	ofi, err := os.Create(ofile)
 	if err != nil {
-		return err;
+		return err
 	}
 	defer ofi.Close()
 
@@ -60,7 +60,7 @@ func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error
 	for {
 		nRead, err := ifi.Read(buffer)
 		if err == io.EOF {
-			break;
+			break
 		} else if err != nil {
 			return err
 		}
@@ -79,17 +79,17 @@ func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error
 }
 
 func clean(s string) string {
-	return strings.Map(func (r rune) rune {
-			if unicode.IsLetter(r) || unicode.IsDigit(r) {
-				return r
-			}
-			return '_'
-		}, s)
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return r
+		}
+		return '_'
+	}, s)
 }
 
 func main() {
 	flag.Parse()
 	for _, fileName := range flag.Args() {
-		bin2go(fileName, fileName + ".go", *pkgName, clean(fileName), *lineLen, *comment)
+		bin2go(fileName, fileName+".go", *pkgName, clean(fileName), *lineLen, *comment)
 	}
 }
