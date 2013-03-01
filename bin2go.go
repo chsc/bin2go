@@ -35,12 +35,13 @@ import (
 )
 
 var (
-	pkgName = flag.String("p", "main", "Package name")
-	lineLen = flag.Int("l", 8, "Line length")
-	comment = flag.Bool("c", false, "Line comments")
+	pkgName   = flag.String("p", "main", "Package name")
+	lineLen   = flag.Int("l", 8, "Line length")
+	comment   = flag.Bool("c", false, "Line comments")
+	not_sized = flag.Bool("z", false, "Use non-sized []byte")
 )
 
-func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error {
+func bin2go(ifile, ofile, pkgName, bufName string, line int, comment, not_sized bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
 		return err
@@ -54,9 +55,14 @@ func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error
 
 	buffer := make([]byte, line)
 
+	size := "..."
+	if not_sized {
+		size = ""
+	}
+
 	fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
 	fmt.Fprintf(ofi, "package %s\n\n", pkgName)
-	fmt.Fprintf(ofi, "var %s = [...]byte{\n", bufName)
+	fmt.Fprintf(ofi, "var %s = [%s]byte{\n", bufName, size)
 	for {
 		nRead, err := ifi.Read(buffer)
 		if err == io.EOF {
@@ -90,6 +96,6 @@ func clean(s string) string {
 func main() {
 	flag.Parse()
 	for _, fileName := range flag.Args() {
-		bin2go(fileName, fileName+".go", *pkgName, clean(fileName), *lineLen, *comment)
+		bin2go(fileName, fileName+".go", *pkgName, clean(fileName), *lineLen, *comment, *not_sized)
 	}
 }
