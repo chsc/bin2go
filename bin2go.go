@@ -1,6 +1,6 @@
 // Copyright (c) 2011, Christoph Schunk
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //     * Redistributions of source code must retain the above copyright
@@ -11,7 +11,7 @@
 //     * Neither the name of the author nor the
 //       names of its contributors may be used to endorse or promote products
 //       derived from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,41 +26,46 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"io"
 	"os"
-	"unicode"
 	"strings"
+	"unicode"
 )
 
 var (
-	pkgName = flag.String("p", "main", "Package name")
-	lineLen = flag.Int("l", 8, "Line length")
-	comment = flag.Bool("c", false, "Line comments")
+	pkgName  = flag.String("p", "main", "Package name")
+	lineLen  = flag.Int("l", 8, "Line length")
+	comment  = flag.Bool("c", false, "Line comments")
+	useArray = flag.Bool("a", false, "Use slice ([]byte) instead of array ([...]byte)")
+	single   = flag.String("s", "", "Single output filename")
 )
 
-func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error {
+func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, useArray, useSingle bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
-		return err;
+		return err
 	}
 	defer ifi.Close()
-	ofi, err := os.Create(ofile)
-	if err != nil {
-		return err;
-	}
-	defer ofi.Close()
 
 	buffer := make([]byte, line)
 
-	fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-	fmt.Fprintf(ofi, "package %s\n\n", pkgName)
-	fmt.Fprintf(ofi, "var %s = [...]byte{\n", bufName)
+	size := "..."
+	if useArray {
+		size = ""
+	}
+
+	if !useSingle {
+		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
+		fmt.Fprintf(ofi, "package %s\n", pkgName)
+	}
+
+	fmt.Fprintf(ofi, "\nvar %s = [%s]byte{\n", bufName, size)
 	for {
 		nRead, err := ifi.Read(buffer)
 		if err == io.EOF {
-			break;
+			break
 		} else if err != nil {
 			return err
 		}
@@ -73,23 +78,44 @@ func bin2go(ifile, ofile, pkgName, bufName string, line int, comment bool) error
 		}
 		fmt.Fprint(ofi, "\n")
 	}
-	fmt.Fprint(ofi, "}")
+	fmt.Fprint(ofi, "}\n")
 
 	return nil
 }
 
 func clean(s string) string {
-	return strings.Map(func (r rune) rune {
-			if unicode.IsLetter(r) || unicode.IsDigit(r) {
-				return r
-			}
-			return '_'
-		}, s)
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return r
+		}
+		return '_'
+	}, s)
 }
 
 func main() {
 	flag.Parse()
+
+	var ofi *os.File
+	var err error
+	var useSingle = *single != ""
+	if useSingle {
+		if ofi, err = os.Create(*single); err != nil {
+			return
+		}
+		defer ofi.Close()
+
+		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
+		fmt.Fprintf(ofi, "package %s\n", *pkgName)
+	}
+
 	for _, fileName := range flag.Args() {
-		bin2go(fileName, fileName + ".go", *pkgName, clean(fileName), *lineLen, *comment)
+		if !useSingle {
+			if ofi, err = os.Create(fileName + ".go"); err != nil {
+				return
+			}
+			defer ofi.Close()
+		}
+
+		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
 	}
 }
