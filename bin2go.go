@@ -58,10 +58,10 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not
 
 	if !use_single {
 		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-		fmt.Fprintf(ofi, "package %s", pkgName)
+		fmt.Fprintf(ofi, "package %s\n", pkgName)
 	}
 
-	fmt.Fprintf(ofi, "\n\nvar %s = [%s]byte{\n", bufName, size)
+	fmt.Fprintf(ofi, "\nvar %s = [%s]byte{\n", bufName, size)
 	for {
 		nRead, err := ifi.Read(buffer)
 		if err == io.EOF {
@@ -78,7 +78,7 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not
 		}
 		fmt.Fprint(ofi, "\n")
 	}
-	fmt.Fprint(ofi, "}")
+	fmt.Fprint(ofi, "}\n")
 
 	return nil
 }
@@ -104,7 +104,7 @@ func main() {
 		}
 
 		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-		fmt.Fprintf(ofi, "package %s", *pkgName)
+		fmt.Fprintf(ofi, "package %s\n", *pkgName)
 
 		defer ofi.Close()
 	}
