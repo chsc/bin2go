@@ -42,7 +42,7 @@ var (
 	single    = flag.String("s", "", "Single output filename")
 )
 
-func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not_sized, use_single bool) error {
+func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not_sized, useSingle bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not
 		size = ""
 	}
 
-	if !use_single {
+	if !useSingle {
 		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
 		fmt.Fprintf(ofi, "package %s\n", pkgName)
 	}
@@ -97,8 +97,8 @@ func main() {
 
 	var ofi *os.File
 	var err error
-	var use_single = *single != ""
-	if use_single {
+	var useSingle = *single != ""
+	if useSingle {
 		if ofi, err = os.Create(*single); err != nil {
 			return
 		}
@@ -109,13 +109,13 @@ func main() {
 	}
 
 	for _, fileName := range flag.Args() {
-		if !use_single {
+		if !useSingle {
 			if ofi, err = os.Create(fileName + ".go"); err != nil {
 				return
 			}
 			defer ofi.Close()
 		}
 
-		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *not_sized, use_single)
+		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *not_sized, useSingle)
 	}
 }
