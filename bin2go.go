@@ -35,14 +35,14 @@ import (
 )
 
 var (
-	pkgName   = flag.String("p", "main", "Package name")
-	lineLen   = flag.Int("l", 8, "Line length")
-	comment   = flag.Bool("c", false, "Line comments")
-	not_sized = flag.Bool("z", false, "Use non-sized []byte")
-	single    = flag.String("s", "", "Single output filename")
+	pkgName  = flag.String("p", "main", "Package name")
+	lineLen  = flag.Int("l", 8, "Line length")
+	comment  = flag.Bool("c", false, "Line comments")
+	useArray = flag.Bool("a", false, "Use slice ([]byte) instead of array ([...]byte)")
+	single   = flag.String("s", "", "Single output filename")
 )
 
-func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not_sized, useSingle bool) error {
+func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, useArray, useSingle bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, not
 	buffer := make([]byte, line)
 
 	size := "..."
-	if not_sized {
+	if useArray {
 		size = ""
 	}
 
@@ -116,6 +116,6 @@ func main() {
 			defer ofi.Close()
 		}
 
-		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *not_sized, useSingle)
+		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
 	}
 }
