@@ -102,11 +102,10 @@ func main() {
 		if ofi, err = os.Create(*single); err != nil {
 			return
 		}
+		defer ofi.Close()
 
 		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
 		fmt.Fprintf(ofi, "package %s\n", *pkgName)
-
-		defer ofi.Close()
 	}
 
 	for _, fileName := range flag.Args() {
@@ -114,12 +113,9 @@ func main() {
 			if ofi, err = os.Create(fileName + ".go"); err != nil {
 				return
 			}
+			defer ofi.Close()
 		}
 
 		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *not_sized, use_single)
-
-		if !use_single {
-			ofi.Close()
-		}
 	}
 }
