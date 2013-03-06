@@ -57,8 +57,7 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, use
 	}
 
 	if !useSingle {
-		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-		fmt.Fprintf(ofi, "package %s\n", pkgName)
+		writeHeader(ofi)
 	}
 
 	fmt.Fprintf(ofi, "\nvar %s = [%s]byte{\n", bufName, size)
@@ -104,8 +103,7 @@ func main() {
 		}
 		defer ofi.Close()
 
-		fmt.Fprintf(ofi, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n")
-		fmt.Fprintf(ofi, "package %s\n", *pkgName)
+		writeHeader(ofi)
 	}
 
 	for _, fileName := range flag.Args() {
@@ -118,4 +116,9 @@ func main() {
 
 		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
 	}
+}
+
+func writeHeader(f *os.File) {
+	fmt.Fprintf(f, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n\n")
+	fmt.Fprintf(f, "package %s\n", *pkgName)
 }
