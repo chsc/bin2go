@@ -40,6 +40,7 @@ var (
 	comment  = flag.Bool("c", false, "Line comments")
 	useArray = flag.Bool("a", false, "Use slice ([]byte) instead of array ([...]byte)")
 	single   = flag.String("s", "", "Single output filename")
+	golint   = flag.Bool("g", false, "Use CamelCased variable names")
 )
 
 func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, useArray, useSingle bool) error {
@@ -73,7 +74,7 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, use
 			fmt.Fprintf(ofi, " %0#2x,", c)
 		}
 		if comment {
-			fmt.Fprintf(ofi, "\t// %s", clean(string(buffer)))
+			fmt.Fprintf(ofi, "\t// %s", clean(string(buffer), false))
 		}
 		fmt.Fprint(ofi, "\n")
 	}
@@ -82,13 +83,19 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, use
 	return nil
 }
 
-func clean(s string) string {
-	return strings.Map(func(r rune) rune {
+func clean(s string, passGolint bool) string {
+	cleaned := strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return r
 		}
 		return '_'
 	}, s)
+	if !passGolint {
+		return cleaned
+	}
+	words := strings.Split(cleaned, "_")
+	camelCased := words[0] + strings.Title(strings.Join(words[1:], " "))
+	return strings.Replace(camelCased, " ", "", -1)
 }
 
 func main() {
@@ -114,7 +121,7 @@ func main() {
 			defer ofi.Close()
 		}
 
-		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
+		bin2go(fileName, *pkgName, clean(fileName, *golint), ofi, *lineLen, *comment, *useArray, useSingle)
 	}
 }
 
