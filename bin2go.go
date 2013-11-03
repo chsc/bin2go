@@ -91,6 +91,30 @@ func clean(s string) string {
 	}, s)
 }
 
+func camelCase(s string) string {
+	camel := false
+	first := true
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			if first { // always lower case first rune
+				first = false
+				return unicode.ToLower(r)
+			}
+			if camel {
+				camel = false
+				return unicode.ToTitle(r)
+			}
+			return r
+		}
+
+		if !first { // if first runes aren't letters or digits, don't capitalize
+			camel = true // unknown rune type -> ignore and title case next rune
+		}
+
+		return -1
+	}, s)
+}
+
 func main() {
 	flag.Parse()
 
@@ -114,7 +138,7 @@ func main() {
 			defer ofi.Close()
 		}
 
-		bin2go(fileName, *pkgName, clean(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
+		bin2go(fileName, *pkgName, camelCase(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
 	}
 }
 
