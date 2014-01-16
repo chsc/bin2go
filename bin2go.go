@@ -39,10 +39,11 @@ var (
 	lineLen  = flag.Int("l", 8, "Line length")
 	comment  = flag.Bool("c", false, "Line comments")
 	useArray = flag.Bool("a", false, "Use slice ([]byte) instead of array ([...]byte)")
+	modTime  = flag.Bool("m", false, "Add modification time")
 	single   = flag.String("s", "", "Single output filename")
 )
 
-func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, useArray, useSingle bool) error {
+func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, useArray, modTime, useSingle bool) error {
 	ifi, err := os.Open(ifile)
 	if err != nil {
 		return err
@@ -57,7 +58,16 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, use
 	}
 
 	if !useSingle {
-		writeHeader(ofi)
+		writeHeader(ofi, modTime)
+	}
+
+	if modTime {
+		info, err := ifi.Stat()
+		if err != nil {
+			return err
+		}
+		mod := info.ModTime()
+		fmt.Fprintf(ofi, "\nvar %sMod = time.Unix(0, %d)", bufName, mod.UnixNano())
 	}
 
 	fmt.Fprintf(ofi, "\nvar %s = [%s]byte{\n", bufName, size)
@@ -127,7 +137,7 @@ func main() {
 		}
 		defer ofi.Close()
 
-		writeHeader(ofi)
+		writeHeader(ofi, *modTime)
 	}
 
 	for _, fileName := range flag.Args() {
@@ -138,11 +148,14 @@ func main() {
 			defer ofi.Close()
 		}
 
-		bin2go(fileName, *pkgName, camelCase(fileName), ofi, *lineLen, *comment, *useArray, useSingle)
+		bin2go(fileName, *pkgName, camelCase(fileName), ofi, *lineLen, *comment, *useArray, *modTime, useSingle)
 	}
 }
 
-func writeHeader(f *os.File) {
+func writeHeader(f *os.File, modTime bool) {
 	fmt.Fprintf(f, "// Automatically generated with bin2go: http://github.com/chsc/bin2go\n\n")
 	fmt.Fprintf(f, "package %s\n", *pkgName)
+	if modTime {
+		fmt.Fprint(f, "\nimport \"time\"\n")
+	}
 }
