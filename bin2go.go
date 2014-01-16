@@ -67,7 +67,7 @@ func bin2go(ifile, pkgName, bufName string, ofi *os.File, line int, comment, use
 			return err
 		}
 		mod := info.ModTime()
-		fmt.Fprintf(ofi, "\nvar %sMod = time.Unix(%d, %d)", bufName, mod.Unix(), mod.UnixNano())
+		fmt.Fprintf(ofi, "\nvar %sMod = time.Unix(0, %d)", bufName, mod.UnixNano())
 	}
 
 	fmt.Fprintf(ofi, "\nvar %s = [%s]byte{\n", bufName, size)
